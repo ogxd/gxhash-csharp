@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Hashing functions and tools.</Description>
+    <Version>1.0.0</Version>
+    <PackageReleaseNotes>
+      1.0.0: First version
+    </PackageReleaseNotes>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="GxHash.Tests" />
+    <InternalsVisibleTo Include="GxHash.Benchmarks" />
+    <InternalsVisibleTo Include="GxHash.Qualification" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>
