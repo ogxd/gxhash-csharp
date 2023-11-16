@@ -11,7 +11,8 @@ public class GxHashTests
     public void ValuesTest()
     {
         Assert.AreEqual(456576800, GxHash.Hash32(Array.Empty<byte>().AsSpan(), 0), "Unexpected hash value");
-        Assert.AreEqual(978957914, GxHash.Hash32(new byte[] { 0 }.AsSpan(), 0), "Unexpected hash value");
+        Assert.AreEqual(978957914, GxHash.Hash32(new byte[1].AsSpan(), 0), "Unexpected hash value");
+        Assert.AreEqual(-969081598, GxHash.Hash32(new byte[1000].AsSpan(), 0), "Unexpected hash value");
         Assert.AreEqual(1827274036, GxHash.Hash32(MemoryMarshal.AsBytes("hello world".AsSpan()), 123), "Unexpected hash value");
     }
     

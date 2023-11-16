@@ -44,7 +44,6 @@ public class GxHash
 
         Vector128<byte> output = input;
 
-        // 3-rounds AES block cipher with hardcoded keys
         if (ArmAes.IsSupported) {
             // For some reasons the ARM Neon intrinsics for AES a very different from the ones for X86,
             // so we need these operations below to achieve the same results as for x86
@@ -66,21 +65,6 @@ public class GxHash
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Fold(Vector128<byte> input, out int hash) {
-        hash = input.AsInt32().GetElement(0);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Fold(Vector128<byte> input, out uint hash) {
-        hash = input.AsUInt32().GetElement(0);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Fold(Vector128<byte> input, out long hash) {
-        hash = input.AsInt64().GetElement(0);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Vector128<byte> ReadAdvance(ref Vector128<byte> ptr)
     {
         Vector128<byte> value = ptr;
@@ -88,27 +72,24 @@ public class GxHash
         return value;
     }
 
-    const int VECTOR_SIZE_SHIFT = 4;
-    const int UNROLL_FACTOR_SHIFT = 3;
-
-    const int VECTOR_LENGTH = 1 << VECTOR_SIZE_SHIFT; // 2 ^ 4 = 16
-    const int UNROLL_FACTOR = 1 << UNROLL_FACTOR_SHIFT; // 2 ^ 2 = 4
+    private const int VECTOR_SIZE = 16;
+    private const int UNROLL_FACTOR = 8;
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector128<byte> Compress(ReadOnlySpan<byte> bytes)
+    private static Vector128<byte> Compress(ReadOnlySpan<byte> bytes)
     {
         // Get pointer of SIMD vectors from input span
         ref var ptr = ref Unsafe.As<byte, Vector128<byte>>(ref MemoryMarshal.GetReference(bytes));
         
         int len = bytes.Length;
 
-        if (len < VECTOR_LENGTH + 1) {
+        if (len < VECTOR_SIZE + 1) {
             // Input fits on a single SIMD vector, however we might read beyond the input message
             // Thus we need this safe method that checks if it can safely read beyond or must copy
-            return GetPartialVector128(ref ptr, len);
+            return GetPartialVectorSafe(ref ptr, len);
         }
         
-        int remainingBytes = len & (VECTOR_LENGTH - 1);
+        int remainingBytes = len & (VECTOR_SIZE - 1);
 
         // The input does not fit on a single SIMD vector
         Vector128<byte> hashVector;
@@ -123,10 +104,10 @@ public class GxHash
             ptr = ref Unsafe.AddByteOffset(ref ptr, remainingBytes);
         }
 
-        if (len < VECTOR_LENGTH * 2 + 1) {
+        if (len < VECTOR_SIZE * 2 + 1) {
             // Fast path when input length > 16 and <= 32
             hashVector = Compress(hashVector, ReadAdvance(ref ptr));
-        } else if (len < VECTOR_LENGTH * 3 + 1) {
+        } else if (len < VECTOR_SIZE * 3 + 1) {
             // Fast path when input length > 32 and <= 48
             hashVector = Compress(hashVector, Compress(ReadAdvance(ref ptr), ReadAdvance(ref ptr)));
         } else {
@@ -140,7 +121,7 @@ public class GxHash
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Vector128<byte> CompressMany(ref Vector128<byte> start, Vector128<byte> hashVector, int len)
     {
-        int unrollableBlocksCount = (len >> (VECTOR_SIZE_SHIFT + UNROLL_FACTOR_SHIFT)) << UNROLL_FACTOR_SHIFT;
+        int unrollableBlocksCount = len / (VECTOR_SIZE * UNROLL_FACTOR) * UNROLL_FACTOR;
         ref var end2 = ref Unsafe.Add(ref start, unrollableBlocksCount);
 
         while (Unsafe.IsAddressLessThan(ref start, ref end2)) {
@@ -158,7 +139,7 @@ public class GxHash
             hashVector = Compress(hashVector, blockHash);
         }
 
-        int remainingBlocksCount = (len >> VECTOR_SIZE_SHIFT) - unrollableBlocksCount;
+        int remainingBlocksCount = len / VECTOR_SIZE - unrollableBlocksCount;
         
         ref var end = ref Unsafe.Add(ref start, remainingBlocksCount);
 
@@ -172,7 +153,7 @@ public class GxHash
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector128<byte> GetPartialVector128(ref Vector128<byte> start, int remainingBytes)
+    private static Vector128<byte> GetPartialVectorSafe(ref Vector128<byte> start, int remainingBytes)
     {
         if (IsReadBeyondSafe(ref start))
         {
@@ -196,7 +177,7 @@ public class GxHash
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector128<byte> Compress(Vector128<byte> a, Vector128<byte> b)
+    private static Vector128<byte> Compress(Vector128<byte> a, Vector128<byte> b)
     {
         var keys1 = Vector128.Create(0xFC3BC28E, 0x89C222E5, 0xB09D3E21, 0xF2784542).AsByte();
         var keys2 = Vector128.Create(0x03FCE279, 0xCB6B2E9B, 0xB361DC58, 0x39136BD9).AsByte();
@@ -232,12 +213,20 @@ public class GxHash
         throw new PlatformNotSupportedException();
     }
     
+    /// <summary>
+    /// Returns true if reading the ref value is safe.
+    /// This is done using the pointer address and making sure we aren't going to
+    /// read past the end of the current memory page (which could produce segfaults)
+    /// </summary>
+    /// <param name="reference"></param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static unsafe bool IsReadBeyondSafe(ref Vector128<byte> reference)
     {
+        // 4096 bytes is a conservative value for the page size
         const int PAGE_SIZE = 0x1000;
         IntPtr address = (IntPtr)Unsafe.AsPointer(ref reference);
         IntPtr offsetWithinPage = address & (PAGE_SIZE - 1);
-        return offsetWithinPage < PAGE_SIZE - VECTOR_LENGTH;
+        return offsetWithinPage < PAGE_SIZE - VECTOR_SIZE;
     }
 }
