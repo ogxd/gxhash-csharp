@@ -43,32 +43,22 @@ public class GxHashTests
         }
     }
     
-    [TestCase(1)]
-    [TestCase(4)]
-    [TestCase(15)]
-    [TestCase(16)]
-    [TestCase(17)]
-    [TestCase(255)]
-    [TestCase(256)]
-    [TestCase(1024)]
-    [TestCase(3000)]
-    [TestCase(56789)]
-    [Repeat(100)] // Run the test more than once
-    public void AllBytesAreRead(int payloadSize)
+    [Test]
+    public void AllBytesAreRead()
     {
-        // So that every test picks different bytes
-        Random random = Random.Shared;
+        for (int s = 0; s < 1200; s++) {
+            byte[] bytes = new byte[s];
+            int hash = GxHash.Hash32(bytes, 42);
 
-        byte[] bytes = new byte[payloadSize];
-        byte[] bytesTweaked = new byte[payloadSize];
-        random.NextBytes(bytes);
-
-        UnsafeUtils.FlipRandomBit(bytes, bytesTweaked);
-
-        int hash = GxHash.Hash32(bytes, 42);
-        int hashTweaked = GxHash.Hash32(bytesTweaked, 42);
-
-        Assert.AreNotEqual(hash, hashTweaked);
+            for (int i = 0; i < s; i++) {
+                byte swap = bytes[i];
+                bytes[i] = 82;
+                int newHash = GxHash.Hash32(bytes, 42);
+                bytes[i] = swap;
+                
+                Assert.AreNotEqual(hash, newHash, $"byte {i} not processed for input of size {s}");
+            }
+        }
     }
 
     [TestCase(1, 0, 1)]

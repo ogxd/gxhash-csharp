@@ -64,14 +64,6 @@ public class GxHash
         return output;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector128<byte> ReadAdvance(ref Vector128<byte> ptr)
-    {
-        Vector128<byte> value = ptr;
-        ptr = ref Unsafe.Add(ref ptr, 1);
-        return value;
-    }
-
     private const int VECTOR_SIZE = 16;
     private const int UNROLL_FACTOR = 8;
     
@@ -83,18 +75,19 @@ public class GxHash
         
         int len = bytes.Length;
 
-        if (len < VECTOR_SIZE + 1) {
+        if (len <= VECTOR_SIZE) {
             // Input fits on a single SIMD vector, however we might read beyond the input message
             // Thus we need this safe method that checks if it can safely read beyond or must copy
-            return GetPartialVectorSafe(ref ptr, len);
+            return GetPartialVector(ref ptr, len);
         }
         
-        int remainingBytes = len & (VECTOR_SIZE - 1);
+        int remainingBytes = len % VECTOR_SIZE;
 
         // The input does not fit on a single SIMD vector
         Vector128<byte> hashVector;
         if (remainingBytes == 0) {
-            hashVector = ReadAdvance(ref ptr);
+            hashVector = ptr;
+            ptr = ref Unsafe.Add(ref ptr, 1);
         } else {
             // If the input length does not match the length of a whole number of SIMD vectors,
             // it means we'll need to read a partial vector. We can start with the partial vector first,
@@ -104,12 +97,12 @@ public class GxHash
             ptr = ref Unsafe.AddByteOffset(ref ptr, remainingBytes);
         }
 
-        if (len < VECTOR_SIZE * 2 + 1) {
+        if (len <= VECTOR_SIZE * 2) {
             // Fast path when input length > 16 and <= 32
-            hashVector = Compress(hashVector, ReadAdvance(ref ptr));
-        } else if (len < VECTOR_SIZE * 3 + 1) {
+            hashVector = Compress(hashVector, ptr);
+        } else if (len <= VECTOR_SIZE * 3) {
             // Fast path when input length > 32 and <= 48
-            hashVector = Compress(hashVector, Compress(ReadAdvance(ref ptr), ReadAdvance(ref ptr)));
+            hashVector = Compress(hashVector, Compress(ptr, Unsafe.Add(ref ptr, 1)));
         } else {
             // Input message is large and we can use the high ILP loop
             hashVector = CompressMany(ref ptr, hashVector, len);
@@ -153,20 +146,26 @@ public class GxHash
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector128<byte> GetPartialVectorSafe(ref Vector128<byte> start, int remainingBytes)
+    private static Vector128<byte> GetPartialVector(ref Vector128<byte> start, int remainingBytes)
     {
         if (IsReadBeyondSafe(ref start))
         {
             return GetPartialVectorUnsafe(ref start, remainingBytes);
         }
 
+        return GetPartialVectorSafe(ref start, remainingBytes);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<byte> GetPartialVectorSafe(ref Vector128<byte> start, int remainingBytes)
+    {
         Vector128<byte> input = Vector128<byte>.Zero;
         ref byte source = ref Unsafe.As<Vector128<byte>, byte>(ref start);
         ref byte dest = ref Unsafe.As<Vector128<byte>, byte>(ref input);
         Unsafe.CopyBlockUnaligned(ref dest, ref source, (uint)remainingBytes);
         return Vector128.Add(input, Vector128.Create((byte)remainingBytes));
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Vector128<byte> GetPartialVectorUnsafe(ref Vector128<byte> start, int remainingBytes)
     {
