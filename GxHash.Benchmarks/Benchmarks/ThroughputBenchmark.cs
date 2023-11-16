@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using BenchmarkDotNet.Order;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using GxHash.Utils;
 

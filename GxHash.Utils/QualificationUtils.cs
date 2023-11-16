@@ -1,8 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
-namespace GxHash.Utils;
+﻿namespace GxHash.Utils;
 
 public static class QualificationUtils
 {
