@@ -41,6 +41,19 @@ public class GxHashTests
             Assert.AreNotEqual(0L, hash, "Zero hash!");
             Assert.IsTrue(hashes.Add(hash), "Collision!");
         }
+        
+        // Check that we don't hash beyond input data
+        Random.Shared.NextBytes(bytes);
+        for (int i = 0; i < bytes.Length - 100; i++)
+        {
+            ReadOnlySpan<byte> slice = bytes.AsSpan().Slice(100, i);
+            long hashBefore = GxHash.Hash64(slice, 42);
+            // Randomize bytes right before/after input bounds
+            Random.Shared.NextBytes(bytes.AsSpan().Slice(0, 100));
+            Random.Shared.NextBytes(bytes.AsSpan().Slice(100 + i));
+            long hashAfter = GxHash.Hash64(slice, 42);
+            Assert.AreEqual(hashBefore, hashAfter, "Hash depends on out of bounds data!");
+        }
     }
     
     [Test]
