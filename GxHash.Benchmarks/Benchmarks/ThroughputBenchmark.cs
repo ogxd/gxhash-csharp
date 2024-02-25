@@ -20,8 +20,9 @@ public class ThroughputBenchmark
     public int XxH3() => (int)(long)XxHash3.HashToUInt64(MemoryMarshal.AsBytes(Value.AsSpan()), _seed);
 
     [Benchmark]
-    public int GxHash32() => GxHash.Hash32(MemoryMarshal.AsBytes(Value.AsSpan()), _seed);
+    public int GxHash32() => GxHash.Hash32(MemoryMarshal.AsBytes(Value.AsSpan()), _useed);
     
+    private static readonly ulong _useed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
     private static readonly long _seed = BitConverter.ToInt64(RandomNumberGenerator.GetBytes(8));
 
     [ParamsSource(nameof(GetData))]

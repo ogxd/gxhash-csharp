@@ -10,50 +10,59 @@ namespace GxHash;
 
 public class GxHash
 {
+    // Internal usage only because T cannot be checked at compile time via generic type constrains
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Hash32(ReadOnlySpan<byte> bytes, long seed) {
-        return Finalize(Compress(bytes), seed).AsInt32().GetElement(0);
+    internal static T Hash<T>(ReadOnlySpan<byte> bytes, UInt128 seed) {
+        return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
+            .As<byte, T>().GetElement(0);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint HashU32(ReadOnlySpan<byte> bytes, long seed) {
-        return Finalize(Compress(bytes), seed).AsUInt32().GetElement(0);
+    public static int Hash32(ReadOnlySpan<byte> bytes, UInt128 seed) {
+        return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
+            .AsInt32().GetElement(0);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long Hash64(ReadOnlySpan<byte> bytes, long seed) {
-        return Finalize(Compress(bytes), seed).AsInt64().GetElement(0);
+    public static uint HashU32(ReadOnlySpan<byte> bytes, UInt128 seed) {
+        return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
+            .AsUInt32().GetElement(0);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong HashU64(ReadOnlySpan<byte> bytes, long seed) {
-        return Finalize(Compress(bytes), seed).AsUInt64().GetElement(0);
+    public static long Hash64(ReadOnlySpan<byte> bytes, UInt128 seed) {
+        return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
+            .AsInt64().GetElement(0);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Guid Hash128(ReadOnlySpan<byte> bytes, long seed) {
-        Vector128<byte> hash = Finalize(Compress(bytes), seed);
+    public static ulong HashU64(ReadOnlySpan<byte> bytes, UInt128 seed) {
+        return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
+            .AsUInt64().GetElement(0);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Guid Hash128(ReadOnlySpan<byte> bytes, UInt128 seed) {
+        Vector128<byte> hash = Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)));
         return Unsafe.As<Vector128<byte>, Guid>(ref hash);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector128<byte> Finalize(Vector128<byte> input, long seed = 0) {
+    private static Vector128<byte> Finalize(Vector128<byte> input) {
         var keys1 = Vector128.Create(0x713b01d0, 0x8f2f35db, 0xaf163956, 0x85459f85).AsByte();
         var keys2 = Vector128.Create(0x1de09647, 0x92cfa39c, 0x3dd99aca, 0xb89c054f).AsByte();
         var keys3 = Vector128.Create(0xc78b122b, 0x5544b1b7, 0x689d2b7d, 0xd0012e32).AsByte();
-
+        
         Vector128<byte> output = input;
 
         if (ArmAes.IsSupported) {
             // For some reasons the ARM Neon intrinsics for AES a very different from the ones for X86,
             // so we need these operations below to achieve the same results as for x86
             // See https://blog.michaelbrase.com/2018/05/08/emulating-x86-aes-intrinsics-on-armv8-a
-            output = AdvSimd.Xor(ArmAes.MixColumns(ArmAes.Encrypt(output, Vector128<byte>.Zero)), Vector128.Create(seed).AsByte());
             output = AdvSimd.Xor(ArmAes.MixColumns(ArmAes.Encrypt(output, Vector128<byte>.Zero)), keys1);
             output = AdvSimd.Xor(ArmAes.MixColumns(ArmAes.Encrypt(output, Vector128<byte>.Zero)), keys2);
             output = AdvSimd.Xor(ArmAes.Encrypt(output, Vector128<byte>.Zero), keys3);
         } else if (X86Aes.IsSupported) {
-            output = X86Aes.Encrypt(output, Vector128.Create(seed).AsByte());
             output = X86Aes.Encrypt(output, keys1);
             output = X86Aes.Encrypt(output, keys2);
             output = X86Aes.EncryptLast(output, keys3);

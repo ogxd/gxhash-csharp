@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace GxHash.Tests;
 
@@ -10,10 +10,10 @@ public class GxHashTests
     [Test]
     public void ValuesTest()
     {
-        Assert.AreEqual(456576800, GxHash.Hash32(Array.Empty<byte>().AsSpan(), 0), "Unexpected hash value");
-        Assert.AreEqual(978957914, GxHash.Hash32(new byte[1].AsSpan(), 0), "Unexpected hash value");
-        Assert.AreEqual(-969081598, GxHash.Hash32(new byte[1000].AsSpan(), 0), "Unexpected hash value");
-        Assert.AreEqual(1827274036, GxHash.Hash32(MemoryMarshal.AsBytes("hello world".AsSpan()), 123), "Unexpected hash value");
+        Assert.AreEqual(456576800, GxHash.Hash<uint>(Array.Empty<byte>().AsSpan(), 0), "Unexpected hash value");
+        Assert.AreEqual(978957914, GxHash.Hash<uint>(new byte[1].AsSpan(), 0), "Unexpected hash value");
+        Assert.AreEqual(3325885698, GxHash.Hash<uint>(new byte[1000].AsSpan(), 0), "Unexpected hash value");
+        Assert.AreEqual(1741430579, GxHash.Hash<uint>(Enumerable.Repeat((byte)42, 4242).ToArray().AsSpan(), 42), "Unexpected hash value");
     }
     
     [Test]
