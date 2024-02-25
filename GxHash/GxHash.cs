@@ -17,34 +17,64 @@ public class GxHash
             .As<byte, T>().GetElement(0);
     }
     
+    /// <summary>
+    /// Hash a span of bytes into an 32-bit signed integer, using the given seed
+    /// </summary>
+    /// <param name="bytes">The input bytes to hash</param>
+    /// <param name="seed">A 128-bit seed</param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Hash32(ReadOnlySpan<byte> bytes, UInt128 seed) {
         return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
             .AsInt32().GetElement(0);
     }
-    
+
+    /// <summary>
+    /// Hash a span of bytes into an 32-bit signed integer, using the given seed
+    /// </summary>
+    /// <param name="bytes">The input bytes to hash</param>
+    /// <param name="seed">A 128-bit seed</param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint HashU32(ReadOnlySpan<byte> bytes, UInt128 seed) {
         return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
             .AsUInt32().GetElement(0);
     }
-    
+
+    /// <summary>
+    /// Hash a span of bytes into an 64-bit signed integer, using the given seed
+    /// </summary>
+    /// <param name="bytes">The input bytes to hash</param>
+    /// <param name="seed">A 128-bit seed</param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long Hash64(ReadOnlySpan<byte> bytes, UInt128 seed) {
         return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
             .AsInt64().GetElement(0);
     }
-    
+
+    /// <summary>
+    /// Hash a span of bytes into an 64-bit unsigned integer, using the given seed
+    /// </summary>
+    /// <param name="bytes">The input bytes to hash</param>
+    /// <param name="seed">A 128-bit seed</param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong HashU64(ReadOnlySpan<byte> bytes, UInt128 seed) {
         return Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)))
             .AsUInt64().GetElement(0);
     }
-    
+
+    /// <summary>
+    /// Hash a span of bytes into an 128-bit unsigned integer, using the given seed
+    /// </summary>
+    /// <param name="bytes">The input bytes to hash</param>
+    /// <param name="seed">A 128-bit seed</param>
+    /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Guid Hash128(ReadOnlySpan<byte> bytes, UInt128 seed) {
+    public static UInt128 Hash128(ReadOnlySpan<byte> bytes, UInt128 seed) {
         Vector128<byte> hash = Finalize(CompressFast(Compress(bytes), Unsafe.As<UInt128, Vector128<byte>>(ref seed)));
-        return Unsafe.As<Vector128<byte>, Guid>(ref hash);
+        return Unsafe.As<Vector128<byte>, UInt128>(ref hash);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,13 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Hashing functions and tools.</Description>
-    <Version>1.0.0</Version>
+    <PackageId>GxHash</PackageId>
+    <Authors>Olivier Giniaux</Authors>
+    <Description>C# version of GxHash, the fastest non-cryptographic algorithm</Description>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>2.0.0</Version>
     <PackageReleaseNotes>
+      2.0.0: Do partial-first
       1.0.0: First version
     </PackageReleaseNotes>
+    <TargetFramework>net8.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   
@@ -16,9 +21,10 @@
     <InternalsVisibleTo Include="GxHash.Benchmarks" />
     <InternalsVisibleTo Include="GxHash.Qualification" />
   </ItemGroup>
-  
+
   <ItemGroup>
-    <PackageReference Include="System.IO.Hashing" Version="7.0.0" />
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath=""/>
+    <None Include="..\README.md" Pack="true" PackagePath=""/>
   </ItemGroup>
 
 </Project>
