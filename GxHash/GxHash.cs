@@ -94,7 +94,7 @@ public class GxHash
         // The input does not fit on a single SIMD vector
         Vector128<byte> hashVector;
         if (remainingBytes == 0) {
-            hashVector = Vector128<byte>.Zero;
+            hashVector = ReadAdvance(ref ptr);
         } else {
             // If the input length does not match the length of a whole number of SIMD vectors,
             // it means we'll need to read a partial vector. We can start with the partial vector first,
