@@ -1,3 +1,10 @@
-﻿using BenchmarkDotNet.Running;
+﻿using System.Collections.Generic;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Loggers;
+using BenchmarkDotNet.Running;
 
-BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+var config = ManualConfig.Create(DefaultConfig.Instance);
+((List<ILogger>)config.GetLoggers()).Clear(); // BDN api... 🙄
+config.AddLogger(new SummaryConsoleLogger());
+
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);

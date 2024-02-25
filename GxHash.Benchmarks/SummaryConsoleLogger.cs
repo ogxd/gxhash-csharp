@@ -3,7 +3,7 @@ using System.Threading;
 using BenchmarkDotNet.Loggers;
 
 /// <summary>
-/// Only prints errors and end sumamry table
+/// Only prints errors and end summary table
 /// </summary>
 public class SummaryConsoleLogger : ILogger
 {
