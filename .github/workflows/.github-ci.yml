@@ -1,0 +1,26 @@
+name: dotnet package
+
+on: [push]
+
+jobs:
+  benchmark:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '7.0'
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build -c Release --no-restore
+      - name: Test
+        run: dotnet test -c Release --no-restore
+      - name: Benchmark
+        run: dotnet run -c Release --no-restore --project "GxHash.Benchmarks" -- -f '*'
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmarks
+          path: 'benchmarks/results'
