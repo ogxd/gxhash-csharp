@@ -1,11 +1,38 @@
 ﻿using NUnit.Framework;
 using System;
-using System.Runtime.Intrinsics;
+using System.Collections.Generic;
 
 namespace GxHash.Tests;
 
 public class GxHashTests
 {
+    [Test]
+    public void SanityChecks()
+    {
+        HashSet<long> hashes = new HashSet<long>();
+
+        // Check that zero filled inputs are hashes differently depending on their size
+        byte[] bytes = new byte[1000];
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            ReadOnlySpan<byte> slice = bytes.AsSpan().Slice(0, i);
+            long hash = GxHash.Hash64(slice, 42);
+            Assert.AreNotEqual(0L, hash, "Zero hash!");
+            Assert.IsTrue(hashes.Add(hash), "Collision!");
+        }
+        
+        // Check that zero padding affects output hash
+        hashes.Clear();
+        bytes[0] = 123;
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            ReadOnlySpan<byte> slice = bytes.AsSpan().Slice(0, i);
+            long hash = GxHash.Hash64(slice, 42);
+            Assert.AreNotEqual(0L, hash, "Zero hash!");
+            Assert.IsTrue(hashes.Add(hash), "Collision!");
+        }
+    }
+    
     [TestCase(1)]
     [TestCase(4)]
     [TestCase(15)]
@@ -16,10 +43,11 @@ public class GxHashTests
     [TestCase(1024)]
     [TestCase(3000)]
     [TestCase(56789)]
-    [Repeat(100)]
+    [Repeat(100)] // Run the test more than once
     public void AllBytesAreRead(int payloadSize)
     {
-        Random random = new Random(0);
+        // So that every test picks different bytes
+        Random random = Random.Shared;
 
         byte[] bytes = new byte[payloadSize];
         byte[] bytesTweaked = new byte[payloadSize];

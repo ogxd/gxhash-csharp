@@ -14,6 +14,27 @@ public class GxHash
     public static int Hash32(ReadOnlySpan<byte> bytes, long seed) {
         return Finalize(Compress(bytes), seed).AsInt32().GetElement(0);
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint HashU32(ReadOnlySpan<byte> bytes, long seed) {
+        return Finalize(Compress(bytes), seed).AsUInt32().GetElement(0);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long Hash64(ReadOnlySpan<byte> bytes, long seed) {
+        return Finalize(Compress(bytes), seed).AsInt64().GetElement(0);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong HashU64(ReadOnlySpan<byte> bytes, long seed) {
+        return Finalize(Compress(bytes), seed).AsUInt64().GetElement(0);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Guid Hash128(ReadOnlySpan<byte> bytes, long seed) {
+        Vector128<byte> hash = Finalize(Compress(bytes), seed);
+        return Unsafe.As<Vector128<byte>, Guid>(ref hash);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Vector128<byte> Finalize(Vector128<byte> input, long seed = 0) {
