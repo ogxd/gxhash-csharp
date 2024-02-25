@@ -90,20 +90,22 @@ public class GxHash
             return GetPartialVector(ref ptr, len);
         }
         
-        int remainingBytes = len % VECTOR_SIZE;
-
-        // The input does not fit on a single SIMD vector
         Vector128<byte> hashVector;
-        if (remainingBytes == 0) {
+        int remainingBytes;
+        
+        int extraBytesCount = len % VECTOR_SIZE;
+        if (extraBytesCount == 0) {
             hashVector = ptr;
             ptr = ref Unsafe.Add(ref ptr, 1);
+            remainingBytes = len - VECTOR_SIZE;
         } else {
             // If the input length does not match the length of a whole number of SIMD vectors,
             // it means we'll need to read a partial vector. We can start with the partial vector first,
             // so that we can safely read beyond since we expect the following bytes to still be part of
             // the input
-            hashVector = GetPartialVectorUnsafe(ref ptr, remainingBytes);
-            ptr = ref Unsafe.AddByteOffset(ref ptr, remainingBytes);
+            hashVector = GetPartialVectorUnsafe(ref ptr, extraBytesCount);
+            ptr = ref Unsafe.AddByteOffset(ref ptr, extraBytesCount);
+            remainingBytes = len - extraBytesCount;
         }
 
         if (len <= VECTOR_SIZE * 2) {
@@ -114,7 +116,7 @@ public class GxHash
             hashVector = Compress(hashVector, Compress(ptr, Unsafe.Add(ref ptr, 1)));
         } else {
             // Input message is large and we can use the high ILP loop
-            hashVector = CompressMany(ref ptr, hashVector, len);
+            hashVector = CompressMany(ref ptr, hashVector, remainingBytes);
         }
         
         return hashVector;
