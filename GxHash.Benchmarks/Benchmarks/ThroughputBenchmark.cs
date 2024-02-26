@@ -21,8 +21,8 @@ public class ThroughputBenchmark
 
     [Benchmark]
     public int GxHash32() => GxHash.Hash32(MemoryMarshal.AsBytes(Value.AsSpan()), _useed);
-    
-    private static readonly ulong _useed = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8));
+
+    private static readonly UInt128 _useed = new UInt128(BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8)), BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8)));
     private static readonly long _seed = BitConverter.ToInt64(RandomNumberGenerator.GetBytes(8));
 
     [ParamsSource(nameof(GetData))]
