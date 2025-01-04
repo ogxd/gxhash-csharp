@@ -22,7 +22,7 @@ public class ThroughputColumn : IColumn
 {
     public string Id => "Throughput";
 
-    public string ColumnName => "Thoughput (MiB/s)";
+    public string ColumnName => "Throughput (MiB/s)";
 
     public bool AlwaysShow => true;
 
