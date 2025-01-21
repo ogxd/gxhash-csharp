@@ -6,8 +6,9 @@
     <Description>C# version of GxHash, the fastest non-cryptographic algorithm</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <PackageReleaseNotes>
+      2.0.1: Pin the source while we're doing a read beyond safe
       2.0.0: Do partial-first
       1.0.0: First version
     </PackageReleaseNotes>
