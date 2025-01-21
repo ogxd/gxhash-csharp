@@ -187,11 +187,14 @@ public class GxHash
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector128<byte> GetPartialVector(ref Vector128<byte> start, int remainingBytes)
+    private static unsafe Vector128<byte> GetPartialVector(ref Vector128<byte> start, int remainingBytes)
     {
-        if (IsReadBeyondSafe(ref start))
+        fixed (Vector128<byte>* pin = &start)
         {
-            return GetPartialVectorUnsafe(ref start, remainingBytes);
+            if (IsReadBeyondSafe(ref start))
+            {
+                return GetPartialVectorUnsafe(ref start, remainingBytes);
+            }
         }
 
         return GetPartialVectorSafe(ref start, remainingBytes);
